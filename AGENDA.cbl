@@ -5,7 +5,11 @@
        FILE-CONTROL.
 
        SELECT AGENDA ASSIGN TO "AGENDA.DAT"
-                 ORGANIZATION IS LINE SEQUENTIAL.
+                 ORGANIZATION IS INDEXED
+                 ACCESS MODE IS DYNAMIC
+                 RECORD KEY IS agenda-code
+                 FILE STATUS IS agenda-status.
+
        DATA DIVISION.
        FILE SECTION.
 
@@ -29,6 +33,11 @@
            03 WE-L15C036 PIC X(020).
            03 WE-L19C011 PIC X(001).
              88 exit-yes  VALUE 'Y'.
+
+       01 Status-Codes.
+          02 agenda-status              PIC X(2).
+             88 No-Error-Found        VALUE "00".
+             88 Rec-ALREADY-EXIST     VALUE "22".
 
        01 WE-L17C014 PIC X(026).
 
@@ -108,7 +117,6 @@
        PERFORM PROCEDURE001.
 
        INITIAL-PROCEDURE.
-       OPEN EXTEND AGENDA.
        MOVE SPACES TO WE-L17C014.
 
        PROCEDURE001.
@@ -124,7 +132,7 @@
            END-IF.
 
        PROCEDURE002.
-
+         OPEN I-O AGENDA.
          MOVE WE-L07C014 TO agenda-code.
          MOVE WE-L09C014 TO agenda-name.
          MOVE WE-L11C014 TO agenda-surname.
@@ -132,8 +140,20 @@
          MOVE WE-L15C014 TO agenda-b-date.
          MOVE WE-L15C036 TO agenda-city.
 
-         WRITE Agenda-Rec.
+         WRITE Agenda-Rec
+           INVALID KEY
+           IF Rec-ALREADY-EXIST
+             MOVE "CONTACT ALREADY EXIST" TO WE-L17C014
+           ELSE
+             MOVE "ANOTHER ERROR OCCURS" TO WE-L17C014
+           END-IF
+         END-WRITE.
 
-         MOVE "CONTACT SAVED SUCCESSFULLY" TO WE-L17C014.
+         IF No-Error-Found
+           MOVE "CONTACT SAVED SUCCESSFULLY" TO WE-L17C014
+         END-IF.
+
+         CLOSE AGENDA.
+
 
          PERFORM PROCEDURE001.
